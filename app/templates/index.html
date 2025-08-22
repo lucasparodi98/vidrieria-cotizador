@@ -1,0 +1,130 @@
+{% extends './body.html' %}
+
+{% block title %} Index {% endblock %}
+
+{% block customCSS %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %} 
+
+{% block container %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col">
+            <label for="nro_vidrio" class="form-label">Nro Vidrios</label>
+            <input type="number" class="form-control" id="nro_vidrio" value="1" min="0">
+        </div>
+
+        <div class="col">
+            <label for="alto" class="form-label">Alto</label>
+            <input type="number" class="form-control" id="alto" min="0" step="0.001">
+        </div>
+
+        <div class="col">
+            <label for="ancho" class="form-label">Ancho</label>
+            <input type="number" class="form-control" id="ancho" min="0" step="0.001">
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label for="marco" class="form-label">Tipo de Marco</label>
+            <select class="form-select" id="marco" placeholder="Elegir Marco...">
+                {% for marco in data.marcos %}
+                <option value="{{ marco.id }}" data-precio="{{ '%.2f'|format(marco.precio_metro) }}">{{ marco.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label for="precio-marco-text" class="form-label">Precio por metro</label>
+            <span id="precio-marco-text" class="form-control-plaintext">—</span>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label for="vidrio" class="form-label">Tipo de Vidrio</label>
+            <select class="form-select" id="vidrio" placeholder="Elegir Vidrio...">
+                {% for vidrio in data.vidrios %}
+                <option value="{{ vidrio.id }}" data-precio="{{ '%.2f'|format(vidrio.precio_metro2) }}">{{ vidrio.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label for="precio-vidrio-text" class="form-label">Precio por metro2</label>
+            <span id="precio-vidrio-text" class="form-control-plaintext">—</span>
+        </div>
+    </div>
+
+    <!-- Botón Calcular -->
+    <div class="row mb-3">
+        <div class="col">
+            <button class="btn btn-primary" id="btnCalcular">Calcular</button>
+        </div>
+    </div>
+
+    <!-- Resultado -->
+    <div class="row">
+        <div class="col">
+            <h4>Total: <span id="total" class="text-success">S/ 0.00</span></h4>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block customJS %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#marco, #vidrio').select2({
+            allowClear: true
+        }); 
+    
+
+        $("#marco").change(function() {
+            let precio = $('option:selected', this).attr('data-precio');
+            let formatted = "S/ " + parseFloat(precio).toFixed(2);
+            $('#precio-marco-text').text(formatted);
+        }).change();
+        $("#vidrio").change(function() {
+            let precio = $('option:selected', this).attr('data-precio');
+            let formatted = "S/ " + parseFloat(precio).toFixed(2);
+            $('#precio-vidrio-text').text(formatted);
+        }).change();
+
+        // Calcular total
+        $("#btnCalcular").click(function() {
+            let alto = parseFloat($("#alto").val()) || 0;
+            let ancho = parseFloat($("#ancho").val()) || 0;
+            let nro_vidrio = parseInt($("#nro_vidrio").val()) || 1;
+
+            let precioMarco = parseFloat($("#marco option:selected").attr("data-precio")) || 0;
+            let precioVidrio = parseFloat($("#vidrio option:selected").attr("data-precio")) || 0;
+            let vidrioNombre = $("#vidrio option:selected").text().trim();
+
+            // Fórmulas
+            let perimetro = 2 * (alto + ancho);   // metros lineales
+            let area = alto * ancho;              // m²
+
+            let costoMarco = perimetro * precioMarco;
+            let costoVidrio = area * precioVidrio * nro_vidrio;
+            
+            let subtotal = costoMarco + costoVidrio;
+
+            let costoAdicional = (nro_vidrio == 0 || vidrioNombre == "Sin Vidrio")
+                ? subtotal * 0.30
+                : subtotal * 0.10;
+
+            let total = subtotal + costoAdicional;
+
+            $("#total").text("S/ " + total.toFixed(2));
+        });
+
+    });
+
+    
+</script>
+{% endblock %}
